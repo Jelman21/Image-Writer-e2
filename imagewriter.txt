@@ -3,9 +3,7 @@
 @outputs [Percent]
 @persist [O]:entity [Ar]:array [Img PHPFile Prefix S]:string [AI Buff Buffer I Length]
  
-#######################
-##----- by Maso -----##
-#######################
+
 #WARNING: Debugging the "S" variable WILL cause extreme loss in frame rate...
  
 if(first()) {
