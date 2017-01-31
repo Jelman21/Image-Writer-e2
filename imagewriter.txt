@@ -1,0 +1,105 @@
+@name imagewriter
+@inputs [DS]:wirelink
+@outputs [Percent]
+@persist [O]:entity [Ar]:array [Img PHPFile Prefix S]:string [AI Buff Buffer I Length]
+ 
+#######################
+##----- by Maso -----##
+#######################
+#WARNING: Debugging the "S" variable WILL cause extreme loss in frame rate...
+ 
+if(first()) {
+    runOnChat(1)
+    Prefix = ">"
+    O = owner()
+    PHPFile = "https://jelman.me/e2.php"
+}
+ 
+Req = httpCanRequest()
+Fin = changed(Req)&Req
+ 
+if(chatClk(O)) {
+    Said = lastSaid()
+    if(Said:index(1) == Prefix) {
+        hideChat(1)
+        if(!DS) {print("[WIRELINK A DIGITAL SCREEN FIRST!]")}
+        else{
+            Img = Said:sub(2)
+            if(Img:lower():find("http://")) {
+                httpRequest(Img)
+                timer("checkImg",1)
+                print("[CHECKING IMAGE]")
+            }
+            else{print("CHAT EXAMPLE: "+Prefix+"http://www.wiremod.com/forum/customavatars/avatar3378_10.gif")}
+        }
+    }
+}
+ 
+if(clk("checkImg")) {
+    timer("checkImg",1)
+    if(Req) {
+        stoptimer("checkImg")
+        S = httpData()
+        if(S) {
+            Status = "FILE EXISTS"
+            URL = PHPFile + format("?image=%s",Img)
+            httpRequest(URL)
+            timer("getImg",1)
+        }
+        else{
+            Status = "FILE DOES NOT EXIST"
+        }
+        print("["+Status+"]")
+    }
+}
+ 
+if(clk("getImg")) {
+    timer("getImg",1)
+    if(Req) {
+        stoptimer("getImg")
+        S = httpData()
+        X = S:find("x")
+        if(X&X <= 6) {
+            Col = S:find(":")
+            Dim = S:sub(1,Col-1):explode("x")
+            W = Dim[1,string]:toNumber()
+            H = Dim[2,string]:toNumber()
+            S = S:sub(Col+1)
+            Length = S:length()
+            Buffer = round(Length/12)
+            AI = I = Buff = 0
+            Ar = array()
+            DS[1048569]=2   #Color Mode
+            DS[1048572]=H   #Screen Height
+            DS[1048573]=W   #Screen Width
+            DS[1048574]=1   #Clear Screen
+            Status = W+"x"+H+" IMAGE LOADING"
+            timer("writeImg",1)
+        }
+        else{Status = S}
+        print("["+Status+"]")
+    }
+}
+ 
+if(clk("writeImg")) {
+    timer("writeImg",1)
+    while(perf()&I < Length) {
+        I += 3
+        AI += 1
+        Color = (toByte(S,I-2)-16)*65536+(toByte(S,I-1)-16)*256+(toByte(S,I)-16)
+        Ar[AI,number] = Color
+        if(AI >= Buffer) {
+            DS:writeArray(Buff,Ar)
+            AI = 0
+            Ar = array()
+            Buff += Buffer
+        }
+    }
+    if(I == Length) {
+        S = ""
+        DS:writeArray(Buff,Ar)
+        stoptimer("writeImg")
+        print("[FINISHED WRITING]")
+    }
+    Percent = I/Length*100
+}
